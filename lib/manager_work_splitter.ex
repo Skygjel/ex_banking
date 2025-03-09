@@ -1,6 +1,11 @@
 defmodule ManagerWorkSplitter do
   use GenServer
 
+  @moduledoc """
+  This module is responsible for splitting the work between the user workers.
+  It checks if user worker for given user exists, and roues request to it.
+  """
+
   def start_link(user_map) do
     GenServer.start_link(__MODULE__, user_map, name: __MODULE__)
   end

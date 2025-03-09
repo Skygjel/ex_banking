@@ -11,17 +11,17 @@ end
   test "paralel messaging test" do
     test_pid = self()
     #spawn 100 processes to deposit and 100 to withdraw simultaneously 100 times - we shouldn't get any timeouts and should get at least 1 too_many_requests_to_user error
-    for _ <- 1..10 do
+    for _ <- 1..5000 do
       spawn fn -> ddos_test_helper(&ExBanking.deposit/3, "testUser1", "USD", 20, test_pid) end
       spawn fn -> ddos_test_helper(&ExBanking.withdraw/3, "testUser1", "USD", 2, test_pid) end
     end
-    {timeouts, too_many_requests} = compleation_loop(10)
+    {timeouts, too_many_requests} = compleation_loop(5000)
     assert timeouts == 0
     assert too_many_requests > 0
 end
 
   defp ddos_test_helper(function_to_use, user, currency, amount, process) do
-    for _ <- 1..100 do
+    for _ <- 1..10 do
       case function_to_use.(user, amount, currency) do
         {:error, :timeout} -> send(process, {:error, :timeout})
         {:error, :too_many_requests_to_user} -> send(process, {:error, :too_many_requests_to_user})

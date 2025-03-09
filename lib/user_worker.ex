@@ -8,7 +8,6 @@ defmodule UserWorker do
   def init(state), do: {:ok, state}
 
   def handle_cast({{:deposit, original_caller, [amount, currency]}, que}, state) do
-    Process.sleep(1000)
     {reply, new_state} = deposit(amount, currency, state)
     GenServer.reply(original_caller, reply)
     GenServer.cast(que, :task_done)
@@ -16,7 +15,6 @@ defmodule UserWorker do
   end
 
   def handle_cast({{:withdraw, original_caller, [amount, currency]}, que}, state) do
-    Process.sleep(1000)
     {reply, new_state} = withdraw(amount, currency, state)
     GenServer.reply(original_caller, reply)
     GenServer.cast(que, :task_done)
