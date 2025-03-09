@@ -12,15 +12,27 @@ defmodule ManagerWorkSplitter do
 
   def init(state), do: {:ok, state}
 
+  def schedule_work({request, user, params}) do
+    GenServer.call(__MODULE__, {request, user, params})
+  end
+
+  def add_user(username) do
+    GenServer.call(__MODULE__, {:create_user, username})
+  end
+
+  def delete_user(username) do
+    GenServer.call(__MODULE__, {:delete_user, username})
+  end
+
   def handle_call({request, user, params}, from, state) do
     case Map.get(state, user, nil) do
       {pid, _data} ->
-        GenServer.cast(pid, {request, params, from})
+        UserHandler.schedule_work(pid, {request, params, from})
         {:noreply, state}
       %{} = data ->
         case ManagerSup.add_user_sup(data) do
         {:ok, pid} ->
-          GenServer.cast(pid, {request, params, from})
+          UserHandler.schedule_work(pid, {request, params, from})
           {:noreply, Map.put(state, user, {pid, data})}
         error ->
           {:reply, error, state}

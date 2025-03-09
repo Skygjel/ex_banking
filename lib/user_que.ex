@@ -7,9 +7,17 @@ defmodule UserQue do
 
   def init(state), do: {:ok, state}
 
+  def schedule_work(pid, {request, params, from}) do
+    GenServer.call(pid, {request, params, from})
+  end
+
+  def task_compleation(pid) do
+    GenServer.cast(pid, :task_done)
+  end
+
   # Handling calls from worker handler - if you'd like to add another call, please expand the pattern matching on request tuple
   def handle_call(request_tuple, _from, %{worker_pid: pid, que: que}= state) when length(que) == 0 do
-    GenServer.cast(pid, {request_tuple, self()})
+    UserWorker.order_work(pid, request_tuple, self())
     {:reply, :ok, Map.put(state, :que, Enum.concat(que, [request_tuple]))}
   end
 
@@ -26,7 +34,7 @@ defmodule UserQue do
   end
 
   def handle_cast(:task_done, %{worker_pid: pid, que: que} = state) when length(que) > 1 do
-    GenServer.cast(pid, {hd(que), self()})
+    UserWorker.order_work(pid, hd(que), self())
     {:noreply, Map.put(state, :que, tl(que))}
   end
 

@@ -5,7 +5,11 @@ defmodule UserWorker do
     GenServer.start_link(__MODULE__, data)
   end
 
-  def init(state), do: {:ok, state}
+  def init({state, sup}), do: {:ok, Map.put(state, :user, sup)}
+
+  def order_work(pid, {request, user, params}, que) do
+    GenServer.cast(pid, {{request, user, params}, que})
+  end
 
   def handle_cast({{:deposit, original_caller, [amount, currency]}, que}, state) do
     {reply, new_state} = deposit(amount, currency, state)
@@ -23,7 +27,7 @@ defmodule UserWorker do
 
   def handle_cast({{:balance, original_caller, [currency]}, que}, state) do
     GenServer.reply(original_caller, {:ok, Map.get(state, currency, 0)})
-    GenServer.cast(que, :task_done)
+    UserQue.task_compleation(que)
     {:noreply, state}
   end
 
@@ -41,7 +45,7 @@ defmodule UserWorker do
       {:error, :not_enough_money} ->
         GenServer.reply(original_caller, {:error, :not_enough_money})
     end
-    GenServer.cast(que, :task_done)
+    UserQue.task_compleation(que)
     {:noreply, new_state}
   end
 
