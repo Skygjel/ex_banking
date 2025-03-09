@@ -8,8 +8,8 @@ defmodule UserHandler do
     {:ok, que_pid}
   end
 
-  def schedule_work(que_pid, {request, params, from}) do
-    GenServer.cast(que_pid, {request, params, from})
+  def schedule_work(handler_pid, {request, params, from}) do
+    GenServer.cast(handler_pid, {request, params, from})
   end
 
   def handle_cast({request, params, from} , que_pid) do
