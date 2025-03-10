@@ -1,8 +1,4 @@
 defmodule ExBanking do
-  @moduledoc """
-  Documentation for `ExBanking`.
-  """
-
   @doc """
 
   """
@@ -14,7 +10,8 @@ defmodule ExBanking do
 
   def create_user(_), do: {:error, :wrong_arguments}
 
-  @spec delete_user(user :: String.t()) :: :ok | {:error, :wrong_arguments | :user_does_not_exists}
+  @spec delete_user(user :: String.t()) ::
+          :ok | {:error, :wrong_arguments | :user_does_not_exists}
   def delete_user(user_name) when is_binary(user_name) do
     ManagerWorkSplitter.delete_user(user_name)
   end
@@ -34,7 +31,7 @@ defmodule ExBanking do
           {:ok, number} | {:error, :wrong_arguments | :user_does_not_exist}
   def withdraw(user_name, amount, currency)
       when is_binary(user_name) and is_number(amount) and amount > 0 and is_binary(currency) do
-      ManagerWorkSplitter.schedule_work({:withdraw, user_name, [amount, currency]})
+    ManagerWorkSplitter.schedule_work({:withdraw, user_name, [amount, currency]})
   end
 
   def withdraw(_, _, _), do: {:error, :wrong_arguments}
@@ -57,7 +54,7 @@ defmodule ExBanking do
   def send(from_user, to_user, amount, currency)
       when is_binary(from_user) and is_binary(to_user) and is_number(amount) and amount > 0 and
              is_binary(currency) do
-      ManagerWorkSplitter.schedule_work({:send, from_user, [to_user, amount, currency]})
+    ManagerWorkSplitter.schedule_work({:send, from_user, [to_user, amount, currency]})
   end
 
   def send(_, _, _, _), do: {:error, :wrong_arguments}

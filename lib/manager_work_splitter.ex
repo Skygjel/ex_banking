@@ -24,19 +24,26 @@ defmodule ManagerWorkSplitter do
     GenServer.call(__MODULE__, {:delete_user, username})
   end
 
+  def schedule_worker_death(username) do
+    GenServer.cast(__MODULE__, {:delete_worker, username})
+  end
+
   def handle_call({request, user, params}, from, state) do
     case Map.get(state, user, nil) do
       {pid, _data} ->
         UserHandler.schedule_work(pid, {request, params, from})
         {:noreply, state}
+
       %{} = data ->
-        case ManagerSup.add_user_sup(data) do
-        {:ok, pid} ->
-          UserHandler.schedule_work(pid, {request, params, from})
-          {:noreply, Map.put(state, user, {pid, data})}
-        error ->
-          {:reply, error, state}
+        case ManagerSup.add_user_sup(user, data) do
+          {:ok, pid} ->
+            UserHandler.schedule_work(pid, {request, params, from})
+            {:noreply, Map.put(state, user, {pid, data})}
+
+          error ->
+            {:reply, error, state}
         end
+
       nil ->
         case request do
           :send -> {:reply, {:error, :sender_does_not_exist}, state}
@@ -56,6 +63,18 @@ defmodule ManagerWorkSplitter do
     case Map.has_key?(state, username) do
       false -> {:reply, {:error, :user_does_not_exists}, state}
       true -> {:reply, :ok, Map.delete(state, username)}
+    end
+  end
+
+  def handle_cast({:delete_worker, username}, state) do
+    {pid, _data} = Map.get(state, username)
+
+    case UserHandler.confirm_death_request(pid) do
+      {:ok, new_data} ->
+        {:noreply, Map.put(state, username, new_data)}
+
+      :work_resumed ->
+        {:noreply, state}
     end
   end
 end

@@ -5,10 +5,18 @@ defmodule UserWorker do
     GenServer.start_link(__MODULE__, data)
   end
 
-  def init({state, sup}), do: {:ok, Map.put(state, :user, sup)}
+  def init(state), do: {:ok, state}
 
-  def order_work(pid, {request, user, params}, que) do
-    GenServer.cast(pid, {{request, user, params}, que})
+  def order_work(worker_pid, {request, user, params}, que) do
+    GenServer.cast(worker_pid, {{request, user, params}, que})
+  end
+
+  def return_state_and_stop(worker_pid) do
+    GenServer.call(worker_pid, :state_and_stop)
+  end
+
+  def handle_call(:state_and_stop, _from, state) do
+    {:stop, :normal, :reply, state}
   end
 
   def handle_cast({{:deposit, original_caller, [amount, currency]}, que}, state) do
@@ -33,18 +41,27 @@ defmodule UserWorker do
 
   def handle_cast({{:send, original_caller, [user_to, amount, currency]}, que}, state) do
     {reply, new_state} = withdraw(amount, currency, state)
+
     case reply do
       {:ok, new_sender_account_value} ->
         case ExBanking.deposit(user_to, amount, currency) do
-        {:ok, new_receiver_account_value} ->
-          GenServer.reply(original_caller, {:ok, new_sender_account_value, new_receiver_account_value})
-        {:error, :user_does_not_exist} ->
-          GenServer.reply(original_caller, {:error, :receiver_does_not_exist})
-          error -> GenServer.reply(original_caller, error)
-      end
+          {:ok, new_receiver_account_value} ->
+            GenServer.reply(
+              original_caller,
+              {:ok, new_sender_account_value, new_receiver_account_value}
+            )
+
+          {:error, :user_does_not_exist} ->
+            GenServer.reply(original_caller, {:error, :receiver_does_not_exist})
+
+          error ->
+            GenServer.reply(original_caller, error)
+        end
+
       {:error, :not_enough_money} ->
         GenServer.reply(original_caller, {:error, :not_enough_money})
     end
+
     UserQue.task_compleation(que)
     {:noreply, new_state}
   end

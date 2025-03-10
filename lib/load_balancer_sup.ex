@@ -6,6 +6,5 @@ defmodule LoadBalancerSup do
   end
 
   def init(_init_arg) do
-
   end
 end

@@ -93,18 +93,22 @@ defmodule ExBankingTest do
 
   test "cannot send if receiver doesn't exist" do
     ExBanking.deposit("testUser", 100, "USD")
+
     assert ExBanking.send("testUser", "NOTtestUser", 60, "USD") ==
              {:error, :receiver_does_not_exist}
   end
 
   test "cannot send if sender dosen't exist" do
-    assert ExBanking.send("NOTtestUser", "testUser", 60, "USD") == {:error, :sender_does_not_exist}
+    assert ExBanking.send("NOTtestUser", "testUser", 60, "USD") ==
+             {:error, :sender_does_not_exist}
   end
 
   test "cannot send if amount is not a number" do
     ExBanking.create_user("testUserReceiver")
     ExBanking.deposit("testUser", 100, "USD")
-    assert ExBanking.send("testUser", "testUserReceiver", "60", "USD") == {:error, :wrong_arguments}
+
+    assert ExBanking.send("testUser", "testUserReceiver", "60", "USD") ==
+             {:error, :wrong_arguments}
   end
 
   test "cannot send if currency is not a string" do
@@ -116,7 +120,9 @@ defmodule ExBankingTest do
   test "cannot send if amount is negative" do
     ExBanking.create_user("testUserReceiver")
     ExBanking.deposit("testUser", 100, "USD")
-    assert ExBanking.send("testUser", "testUserReceiver", -60, "USD") == {:error, :wrong_arguments}
+
+    assert ExBanking.send("testUser", "testUserReceiver", -60, "USD") ==
+             {:error, :wrong_arguments}
   end
 
   test "cannot send if amount is greater than balance" do
@@ -124,6 +130,8 @@ defmodule ExBankingTest do
     ExBanking.deposit("testUser", 100, "USD")
     # there is no conversion rate implemented in scope
     ExBanking.deposit("testUser", 300, "EUR")
-    assert ExBanking.send("testUser", "testUserReceiver", 150, "USD") == {:error, :not_enough_money}
+
+    assert ExBanking.send("testUser", "testUserReceiver", 150, "USD") ==
+             {:error, :not_enough_money}
   end
 end
